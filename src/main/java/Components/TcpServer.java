@@ -75,19 +75,19 @@ public class TcpServer {
 
             }
         }
-        Scanner sc = new Scanner(client.inputStream);
-        while (sc.hasNextLine()) {
-            String nextLine = sc.nextLine();
-            if (nextLine.contains("PING")) {
-                client.outputStream.write("+PONG \r\n".getBytes());
-            }
-            if (sc.nextLine().contains("ECHO")) {
-                String respHeader = sc.nextLine();
-                String respBody = sc.nextLine();
-                String response = respHeader + "\r\n" + respBody + "\r\n";
-                client.outputStream.write(response.getBytes());
-            }
-        }
+//        Scanner sc = new Scanner(client.inputStream);
+//        while (sc.hasNextLine()) {
+//            String nextLine = sc.nextLine();
+//            if (nextLine.contains("PING")) {
+//                client.outputStream.write("+PONG \r\n".getBytes());
+//            }
+//            if (sc.nextLine().contains("ECHO")) {
+//                String respHeader = sc.nextLine();
+//                String respBody = sc.nextLine();
+//                String response = respHeader + "\r\n" + respBody + "\r\n";
+//                client.outputStream.write(response.getBytes());
+//            }
+        // }
     }
 
     private void handleCommand(String[] command, Client client) throws IOException {
@@ -114,6 +114,7 @@ public class TcpServer {
             client.outputStream.flush();
         }
 
-        }
+
+    }
     }
 

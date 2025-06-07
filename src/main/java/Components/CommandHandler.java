@@ -8,7 +8,7 @@ import java.util.Arrays;
 @Component
 public class CommandHandler {
     @Autowired
-    public Components.RespSerializer respSerializer;
+    public RespSerializer respSerializer;
     @Autowired
     public Store store;
    // @Autowired
@@ -33,15 +33,15 @@ public class CommandHandler {
             int pxFlag = Arrays.stream(command).toList().indexOf("px");
             if (pxFlag != -1) {
                 int delta = Integer.parseInt(command[pxFlag + 1]);
-                store.set(key, value, delta);
+             return    store.set(key, value, delta);
             } else {
-                store.set(key, value);
+               return store.set(key, value);
             }
-            return "+OK\r\n";
         } catch (Exception e) {
             return "-ERR\r\n";
         }
     }
+
 
     public String get(String[] command) {
         try{
