@@ -36,7 +36,7 @@ public class CommandHandler {
                  store.set(key, value, delta);
             }
             else{
-                 store.set(key, value);
+                store.set(key, value);
             }
             return "+OK\r\n";
         }
