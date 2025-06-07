@@ -48,11 +48,20 @@ public class Main {
             System.out.println("+++++++++++++++++++++++++++++++++========================");
             while(sc.hasNextLine()) {
                 String nextLine = sc.nextLine();
-                if(nextLine.contains("PING")){
+                System.out.println(nextLine);
+                if(nextLine.contains("PING")) {
                     outputStream.write("+PONG\r\n".getBytes(StandardCharsets.UTF_8));
+                    }
+                if(nextLine.contains("ECHO")) {
+                    String respHeader = sc.nextLine();
+                    String respBody = sc.nextLine();
+                    String response = respHeader + "\r\n" + respBody + "\r\n";
+                    outputStream.write((response).getBytes());
+                }
+//                if(nextLine.contains("PING")){
+//                    outputStream.write("+PONG\r\n".getBytes(StandardCharsets.UTF_8));
                 }
             }
-            System.out.println("===========================================");
         }
 
     }
