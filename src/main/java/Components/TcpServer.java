@@ -1,6 +1,6 @@
 package Components;
 
-import Components.Service.RespSerializer;
+import Components.RespSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

@@ -8,7 +8,7 @@ import java.util.Arrays;
 @Component
 public class CommandHandler {
     @Autowired
-    public Components.Service.RespSerializer respSerializer;
+    public Components.RespSerializer respSerializer;
     @Autowired
     public Store store;
    // @Autowired
