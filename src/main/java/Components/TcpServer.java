@@ -107,10 +107,12 @@ public class TcpServer {
                 break;
             case "GET":
                 res = commandHandler.get(command);
-                if (res != null && res.equals("")) {
+                break;
+        }
+
+                if (res != null && res.equals(" ")) {
                     client.outputStream.write(res.getBytes());
                 }
         }
     }
-}
 
