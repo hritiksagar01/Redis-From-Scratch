@@ -10,8 +10,8 @@ public class CommandHandler {
     @Autowired
     public Components.Service.RespSerializer respSerializer;
     @Autowired
-//    public Store store;
-//    @Autowired
+    public Store store;
+    @Autowired
 //    public RedisConfig redisConfig;
 //    @Autowired
 //    public ConnectionPool connectionPool;
@@ -26,33 +26,33 @@ public class CommandHandler {
         return respSerializer.serializeBulkString(command[1]);
 
     }
-//    public String set(String[] command) {
-//        try{
-//            String key = command[1];
-//            String value = command[2];
-//            int pxFlag = Arrays.stream(command).toList().indexOf("px");
-//            if(pxFlag != -1) {
-//                int delta = Integer.parseInt(command[pxFlag + 1]);
-//                return store.set(key, value, delta);
-//            }
-//            else{
-//                return store.set(key, value);
-//            }
-//        }
-//        catch (Exception e){
-//            return "-1\r\n";
-//        }
-//
-//    }
-//    public String get(String[] command) {
-//        try{
-//            String key = command[1];
-//            return store.get(key, command[2]);
-//        }
-//        catch (Exception e){
-//            return "-1\r\n";
-//        }
-//    }
+    public String set(String[] command) {
+        try{
+            String key = command[1];
+            String value = command[2];
+            int pxFlag = Arrays.stream(command).toList().indexOf("px");
+            if(pxFlag != -1) {
+                int delta = Integer.parseInt(command[pxFlag + 1]);
+                return store.set(key, value, delta);
+            }
+            else{
+                return store.set(key, value);
+            }
+        }
+        catch (Exception e){
+            return "-1\r\n";
+        }
+
+    }
+    public String get(String[] command) {
+        try{
+            String key = command[1];
+            return store.get(key, command[2]);
+        }
+        catch (Exception e){
+            return "-1\r\n";
+        }
+    }
 
 
 //    public String info(String[] command) {
