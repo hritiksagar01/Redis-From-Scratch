@@ -27,24 +27,22 @@ public class CommandHandler {
 
     }
     public String set(String[] command) {
-        try{
+        try {
             String key = command[1];
             String value = command[2];
             int pxFlag = Arrays.stream(command).toList().indexOf("px");
-            if(pxFlag != -1) {
+            if (pxFlag != -1) {
                 int delta = Integer.parseInt(command[pxFlag + 1]);
-                 store.set(key, value, delta);
-            }
-            else{
+                store.set(key, value, delta);
+            } else {
                 store.set(key, value);
             }
             return "+OK\r\n";
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             return "-ERR\r\n";
         }
-
     }
+
     public String get(String[] command) {
         try{
             String key = command[1];

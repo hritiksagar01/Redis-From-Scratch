@@ -109,10 +109,11 @@ public class TcpServer {
                 res = commandHandler.get(command);
                 break;
         }
+        if (res != null && !res.isEmpty()) {
+            client.outputStream.write(res.getBytes(StandardCharsets.UTF_8));
+            client.outputStream.flush();
+        }
 
-                if (res != null && res.equals(" ")) {
-                    client.outputStream.write(res.getBytes());
-                }
         }
     }
 
