@@ -10,12 +10,14 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 
 @Component
 public class TcpServer {
+    @Autowired
     private RespSerializer respSerializer;
     @Autowired
     private CommandHandler commandHandler;
@@ -68,7 +70,9 @@ public class TcpServer {
             byte[] buffer = new byte[client.socket.getReceiveBufferSize()];
             int bytesRead = client.inputStream.read(buffer);
             if (bytesRead > 0) {
-                List<String[]> commands = respSerializer.deseralize(buffer);
+                byte[] validBuffer = Arrays.copyOfRange(buffer, 0, bytesRead);
+                List<String[]> commands = respSerializer.deseralize(validBuffer);
+
                 for (String[] command : commands) {
                     handleCommand(command, client);
                 }

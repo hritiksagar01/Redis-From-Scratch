@@ -44,14 +44,14 @@ public class CommandHandler {
 
 
     public String get(String[] command) {
-        try{
+        try {
             String key = command[1];
-            return store.get(key, command[2]);
-        }
-        catch (Exception e){
+            return store.get(key);
+        } catch (Exception e) {
             return "-1\r\n";
         }
     }
+
 
 
 //    public String info(String[] command) {
