@@ -6,7 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
-@Component
+
 public class Client {
     public Socket socket ;
     public InputStream inputStream;
