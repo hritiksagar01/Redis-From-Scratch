@@ -1,66 +1,41 @@
-
-//import Components.Server.RedisConfig;
-//import Components.Server.SlaveTcpServer;
-//import Config.AppConfig;
-//import Components.Server.MasterTcpServer;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-
+import java.io.*;
+import java.net.*;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Logs from your program will appear here!");
-        ServerSocket serverSocket = null;
-        Socket clientSocket = null;
         int port = 6379;
-        try{
-            serverSocket = new ServerSocket(port);
-            serverSocket.setReuseAddress(true);
-            clientSocket = serverSocket.accept();
-            OutputStream outputStream = clientSocket.getOutputStream();
-             outputStream.write("+PONG\r\n".getBytes());
-        } catch (Exception e) {
-            System.out.println("Error creating server socket: " + e.getMessage());
-            return;
-        }
-//        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("Server listening on port " + port);
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("Client connected: " + clientSocket.getRemoteSocketAddress());
 
-//        MasterTcpServer master = context.getBean(MasterTcpServer.class);
-//        SlaveTcpServer slave = context.getBean(SlaveTcpServer.class);
-//
-//        RedisConfig redisConfig = context.getBean(RedisConfig.class);
-//        int port= 6379;
-//        redisConfig.setPort(port);;
-//
-//        redisConfig.setRole("master");
-//        for(int i =0 ; i< args.length; i++){
-//           switch (args[i]){
-//               case "--port":
-//                   port = Integer.parseInt(args[i+1]);
-//                   redisConfig.setPort(port);
-//                   break;
-//                   case "--replicaof":
-//                       redisConfig.setRole("slave");
-//                       String masterHost = args[i+1].split(" ")[0];
-//                          int masterPort = Integer.parseInt(args[i+1].split(" ")[1]);
-//                          redisConfig.setMasterHost(masterHost);
-//                            redisConfig.setMasterPort(masterPort);
-//                          break;
-//           }
-//        }
-//        redisConfig.setPort(port);
-//        redisConfig.setRole("master");
-//        if(redisConfig.getRole().equals("slave")) {
-//            slave.startServer();
-//        } else {
-//            master.startServer(6379);
-//        }
-//        master.startServer(6379);
+                // Handle client in a new thread or inline for simplicity
+                handleClient(clientSocket);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void handleClient(Socket clientSocket) {
+        try (
+                BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                OutputStream out = clientSocket.getOutputStream()
+        ) {
+            String line;
+            while ((line = in.readLine()) != null) {
+                System.out.println("Received: " + line);
+                // For simplicity, respond with PONG to any command
+                out.write("+PONG\r\n".getBytes());
+                out.flush();
+            }
+        } catch (IOException e) {
+            System.out.println("Client disconnected.");
+        } finally {
+            try {
+                clientSocket.close();
+            } catch (IOException ignored) {}
+        }
     }
 }
-
-
-
