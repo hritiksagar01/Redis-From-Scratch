@@ -30,27 +30,25 @@ public class CommandHandler {
         try {
             String key = command[1];
             String value = command[2];
-            int pxFlag = Arrays.stream(command).toList().indexOf("px");
-            if (pxFlag != -1) {
-                int delta = Integer.parseInt(command[pxFlag + 1]);
-             return    store.set(key, value, delta);
-            } else {
-               return store.set(key, value);
+            return store.set(key, value);
             }
-        } catch (Exception e) {
-            return "-ERR\r\n";
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            return "-1\r\n";
         }
     }
-
-
     public String get(String[] command) {
         try {
             String key = command[1];
             return store.get(key);
-        } catch (Exception e) {
-            return "$-1\r\n";
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            return "-1\r\n";
         }
     }
+
+
 
 
 
