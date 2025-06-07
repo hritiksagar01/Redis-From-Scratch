@@ -62,7 +62,7 @@ public class TcpServer {
         }
     }
 
-    private void handleClients(Client client) throws IOException {
+    void handleClients(Client client) throws IOException {
 
         while (client.socket.isConnected()) {
             byte[] buffer = new byte[client.socket.getReceiveBufferSize()];

@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 @Component
 public class RespSerializer {
+
     private static final Logger logger = Logger.getLogger(RespSerializer.class.getName());
     public String serializeBulkString(String s){
         int length = s.length();
