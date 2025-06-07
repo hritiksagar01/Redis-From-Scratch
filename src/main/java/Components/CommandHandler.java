@@ -33,14 +33,15 @@ public class CommandHandler {
             int pxFlag = Arrays.stream(command).toList().indexOf("px");
             if(pxFlag != -1) {
                 int delta = Integer.parseInt(command[pxFlag + 1]);
-                return store.set(key, value, delta);
+                 store.set(key, value, delta);
             }
             else{
-                return store.set(key, value);
+                 store.set(key, value);
             }
+            return "+OK\r\n";
         }
         catch (Exception e){
-            return "-1\r\n";
+            return "-ERR\r\n";
         }
 
     }
