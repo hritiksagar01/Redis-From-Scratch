@@ -66,10 +66,14 @@ public class Store {
             LocalDateTime now = LocalDateTime.now();
 
             Value value = map.get(key);
-            if(value.expiry.isBefore(now)){
+            if (value == null) {
+                return "$-1\r\n";
+            }
+            if (value.expiry.isBefore(now)) {
                 map.remove(key);
                 return "$-1\r\n";
             }
+
             return respSerializer.serializeBulkString(value.val);
         }
         catch (Exception e){

@@ -48,7 +48,7 @@ public class CommandHandler {
             String key = command[1];
             return store.get(key);
         } catch (Exception e) {
-            return "-1\r\n";
+            return "$-1\r\n";
         }
     }
 
