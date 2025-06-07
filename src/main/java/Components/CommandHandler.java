@@ -5,13 +5,13 @@ import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 
-
+@Component
 public class CommandHandler {
     @Autowired
     public Components.Service.RespSerializer respSerializer;
     @Autowired
     public Store store;
-    @Autowired
+   // @Autowired
 //    public RedisConfig redisConfig;
 //    @Autowired
 //    public ConnectionPool connectionPool;
