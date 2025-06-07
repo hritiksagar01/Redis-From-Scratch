@@ -15,7 +15,8 @@ public class Main {
 
         RedisConfig redisConfig = context.getBean(RedisConfig.class);
         int port= 6379;
-        redisConfig.setPort(port);
+        redisConfig.setPort(port);;
+
         redisConfig.setRole("master");
         for(int i =0 ; i< args.length; i++){
            switch (args[i]){
