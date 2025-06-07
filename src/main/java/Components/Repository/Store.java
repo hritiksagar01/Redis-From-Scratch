@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Slf4j
 @Component
 public class Store {
     @Autowired
@@ -29,7 +28,6 @@ public class Store {
             return "+OK\r\n";
         }
         catch (Exception e){
-            log.error(e.getMessage());
             return "-1\r\n";
         }
     }
@@ -42,7 +40,7 @@ public class Store {
             return "+OK\r\n";
         }
         catch (Exception e){
-            log.error(e.getMessage());
+
             return "-1\r\n";
         }
     }
@@ -58,7 +56,6 @@ public class Store {
             return respSerializer.serializeBulkString(value.val);
         }
         catch (Exception e){
-            log.error(e.getMessage());
             return "-1\r\n";
         }
     }
@@ -74,7 +71,6 @@ public class Store {
             return respSerializer.serializeBulkString(value.val);
         }
         catch (Exception e){
-            log.error(e.getMessage());
             return "-1\r\n";
         }
     }

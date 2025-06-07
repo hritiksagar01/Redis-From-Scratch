@@ -21,6 +21,7 @@ public class RedisConfig {
          masterReplId = UUID.randomUUID().toString().replace("-", "")+
                  UUID.randomUUID().toString().replace("-", "").substring(0, 8);
       }
+        return masterReplId;
     }
 
     public void setMasterReplId(String masterReplId) {

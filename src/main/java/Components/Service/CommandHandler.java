@@ -71,4 +71,7 @@ public class CommandHandler {
     }
 
 
+    public String replconf(String[] command, Client client) {
+        return "+OK\r\n";
+    }
 }

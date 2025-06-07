@@ -37,9 +37,9 @@ public class Main {
         if(redisConfig.getRole().equals("slave")) {
             slave.startServer();
         } else {
-            master.startServer();
+            master.startServer(6379);
         }
-        master.startServer();
+        master.startServer(6379);
     }
 }
 

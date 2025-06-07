@@ -23,7 +23,7 @@ private RespSerializer respSerializer;
     private CommandHandler commandHandler;
     @Autowired
     private RedisConfig redisConfig;
-    public void startServer() {
+    public void startServer(int i) {
 
         ServerSocket serverSocket = null;
         Socket clientSocket = null;
@@ -113,7 +113,7 @@ private RespSerializer respSerializer;
                 res = commandHandler.set(command);
                 break;
                 case "REPLCONF":
-                    res = commandHandler.replconf(command);
+                    res = commandHandler.replconf(command, client);
                     break;
                 case "GET":
                     res = commandHandler.get(command);
