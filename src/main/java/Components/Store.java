@@ -46,21 +46,21 @@ public class Store {
             return "-1\r\n";
         }
     }
-    public String get(String key, String val) {
-        try{
-            LocalDateTime now = LocalDateTime.now();
-
-            Value value = map.get(key);
-            if(value.expiry.isBefore(now)){
-                map.remove(key);
-                return "$-1\r\n";
-            }
-            return respSerializer.serializeBulkString(value.val);
-        }
-        catch (Exception e){
-            return "-1\r\n";
-        }
-    }
+//    public String get(String key, String val) {
+//        try{
+//            LocalDateTime now = LocalDateTime.now();
+//
+//            Value value = map.get(key);
+//            if(value.expiry.isBefore(now)){
+//                map.remove(key);
+//                return "$-1\r\n";
+//            }
+//            return respSerializer.serializeBulkString(value.val);
+//        }
+//        catch (Exception e){
+//            return "-1\r\n";
+//        }
+//    }
     public String get(String key) {
         try{
             LocalDateTime now = LocalDateTime.now();
