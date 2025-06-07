@@ -25,6 +25,7 @@ public class Store {
     public String set(String key, String val) {
         try{
             Value value = new Value(val , LocalDateTime.now(), LocalDateTime.MAX);
+            map.put(key, value);
             return "+OK\r\n";
         }
         catch (Exception e){
