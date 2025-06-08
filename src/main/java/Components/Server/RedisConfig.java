@@ -1,16 +1,22 @@
 package Components.Server;
 
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 @Component
 public class RedisConfig {
+    @Getter
     private String role;
+    @Getter
     private int port;
+    @Getter
     private String masterHost;
+    @Getter
     private int masterPort;
     private String masterReplId = null;
+    @Getter
     private long masterReplOffset = 0L;
 
     public RedisConfig() {
@@ -30,40 +36,20 @@ public class RedisConfig {
         this.masterReplId = masterReplId;
     }
 
-    public long getMasterReplOffset() {
-        return masterReplOffset;
-    }
-
     public void setMasterReplOffset(long masterReplOffset) {
         this.masterReplOffset = masterReplOffset;
-    }
-
-    public String getMasterHost() {
-        return masterHost;
     }
 
     public void setMasterHost(String masterHost) {
         this.masterHost = masterHost;
     }
 
-    public int getMasterPort() {
-        return masterPort;
-    }
-
     public void setMasterPort(int masterPort) {
         this.masterPort = masterPort;
     }
 
-    public String getRole() {
-        return role;
-    }
-
     public void setRole(String role) {
         this.role = role;
-    }
-
-    public int getPort() {
-        return port;
     }
 
     public void setPort(int port) {
