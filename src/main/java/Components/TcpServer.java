@@ -117,8 +117,6 @@ public class TcpServer {
             client.outputStream.write(res.getBytes(StandardCharsets.UTF_8));
             client.outputStream.flush();
         }
-
-
     }
     }
 

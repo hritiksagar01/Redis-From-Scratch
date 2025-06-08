@@ -28,10 +28,19 @@ public class CommandHandler {
     }
     public String set(String[] command) {
         try {
-            String key = command[1];
-            String value = command[2];
-            return store.set(key, value);
+            int pxFlag = Arrays.stream(command).toList().indexOf("px");
+            if (pxFlag != -1) {
+                String key = command[1];
+                String value = command[2];
+                int delta = Integer.parseInt(command[pxFlag + 1]);
+                return store.set(key, value, delta);
+
+            } else {
+                String key = command[1];
+                String value = command[2];
+                return store.set(key, value);
             }
+        }
         catch (Exception e) {
             System.out.println(e.getMessage());
             return "-1\r\n";

@@ -29,9 +29,29 @@ class Store {
        }
            return "-1\r\n";
     }
+    public String set(String key , String val ,int expiryMilliseconds) {
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime exp = now.plus(expiryMilliseconds, java.time.temporal.ChronoUnit.MILLIS);
+
+            Value value = new Value(val ,now , exp);
+            map.put(key , value);
+            return "+OK\r\n";
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        return "-1\r\n";
+    }
     public String get(String key ) {
         try {
+            LocalDateTime now = LocalDateTime.now();
+
             Value value = map.get(key);
+            if (value.expiry.isBefore(now)) {
+                map.remove(key);
+                return "$-1\r\n";
+            }
             return respSerializer.serializeBulkString(value.val);
         }
         catch (Exception e) {
