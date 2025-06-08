@@ -25,7 +25,7 @@ public class RedisConfig {
     }
 
     public long getMasterReplOffset() {
-        if (masterReplOffset == Long.parseLong(null)) {
+        if (masterReplOffset == 0L) {
             masterReplOffset = 0L;
         }
         return masterReplOffset;
@@ -35,7 +35,7 @@ public class RedisConfig {
         this.masterReplOffset = masterReplOffset;
     }
 
-    private long masterReplOffset = Long.parseLong(null);
+    private long masterReplOffset = 0L;
 
 
     public String getMasterHost() {
