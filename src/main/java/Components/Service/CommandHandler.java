@@ -68,15 +68,18 @@ public class CommandHandler {
         command[0] = "info";
         int replication = Arrays.stream(command).toList().indexOf("replication");
         if(replication > -1) {
-            String role = "role:" + redisConfig.getRole();
-            String masterReplId = "master_replid:"+redisConfig.getMasterReplId();
-            String masterReplOffset = "master_repl_offset:" + redisConfig.getMasterReplOffset();
+            String role = "role:" + redisConfig.getRole(); // should return "master" or "slave"
+            String masterReplId = "master_replid:" + redisConfig.getMasterReplId(); // string ID
+            String masterReplOffset = "master_repl_offset:" + redisConfig.getMasterReplOffset(); // a number, like "0"
+
             String[] info = new String[]{role, masterReplId, masterReplOffset};
             String replicationData = String.join("\r\n", info);
             return respSerializer.serializeBulkString(replicationData);
         }
-        return  "# Server\r\n" ;
+
+        return "# Server\r\n";
     }
+
 
 
     public String replconf(String[] command, Client client) {
