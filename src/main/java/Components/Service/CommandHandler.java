@@ -65,13 +65,17 @@ public class CommandHandler {
         command[0] = "info";
         int replication = Arrays.stream(command).toList().indexOf("replication");
         if (replication > -1) {
-            // Return only the role line as expected by the test
-            String role = "role:" + redisConfig.getRole(); // e.g. "master"
-            return respSerializer.serializeBulkString(role);
+            String role = "role:" + redisConfig.getRole();
+            String masterReplId = "master_replid:" + redisConfig.getMasterReplId();
+            String masterReplOffset = "master_repl_offset:" + redisConfig.getMasterReplOffset();
+
+            String info = String.join("\r\n", role, masterReplId, masterReplOffset);
+            return respSerializer.serializeBulkString(info);
         }
 
         return "# Server\r\n";
     }
+
 
 
     public String replconf(String[] command, Client client) {
