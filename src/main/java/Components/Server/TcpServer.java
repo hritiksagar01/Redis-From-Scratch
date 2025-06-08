@@ -1,6 +1,8 @@
-package Components;
+package Components.Server;
 
-import Components.RespSerializer;
+import Components.Service.RespSerializer;
+import Components.Service.CommandHandler;
+import Infra.Client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,7 +14,6 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 
 @Component
@@ -112,6 +113,9 @@ public class TcpServer {
             case "GET":
                 res = commandHandler.get(command);
                 break;
+                case "INFO":
+                    res = commandHandler.info(command);
+                    break;
         }
         if (res != null && !res.isEmpty()) {
             client.outputStream.write(res.getBytes(StandardCharsets.UTF_8));

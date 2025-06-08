@@ -1,4 +1,4 @@
-package Components;
+package Infra;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,7 +13,7 @@ public class Client {
 
     public Client(Socket socket, InputStream inputStream , OutputStream outputStream, int id) {
         this.socket = socket;
-        this.id = this.id;
+        this.id = id;
         this.inputStream = inputStream;
         this.outputStream = outputStream;
         this.id = this.id;

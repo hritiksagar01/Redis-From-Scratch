@@ -1,17 +1,16 @@
-import Components.TcpServer;
-import org.springframework.boot.autoconfigure.web.reactive.HttpHandlerAutoConfiguration;
+import Components.Server.RedisConfig;
+import Components.Server.TcpServer;
+import Config.AppConfig;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.io.*;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.util.Scanner;
-import java.util.concurrent.CompletableFuture;
 
 public class Main {
     public static void main(String[] args) throws IOException {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
         TcpServer app = context.getBean(TcpServer.class);
+        RedisConfig redisConfig = context.getBean(RedisConfig.class);
+
         int port =6379;
         for(int i = 0; i < args.length; i++) {
            if(args[i].equals("--port")) {
@@ -20,6 +19,8 @@ public class Main {
 
             }
         }
+        redisConfig.setPort(port);
+        redisConfig.setRole("master");
         app.startServer(port);
 
     }

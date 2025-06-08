@@ -1,5 +1,8 @@
-package Components;
+package Components.Service;
 
+import Components.Repository.Store;
+import Components.Server.RedisConfig;
+import Infra.Client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -11,8 +14,8 @@ public class CommandHandler {
     public RespSerializer respSerializer;
     @Autowired
     public Store store;
-   // @Autowired
-//    public RedisConfig redisConfig;
+    @Autowired
+    public RedisConfig redisConfig;
 //    @Autowired
 //    public ConnectionPool connectionPool;
 
@@ -61,20 +64,18 @@ public class CommandHandler {
 
 
 
-//    public String info(String[] command) {
-//        command[0] = "info";
-//        int replication = Arrays.stream(command).toList().indexOf("replication");
-//        if(replication > -1) {
-//            String role = "role: " + redisConfig.getRole() + "\r\n";
-//            String masterReplId = "role:" + redisConfig.getMasterReplId() + "\r\n";
-//            String masterReplOffset = "master_repl_offset:" + redisConfig.getMasterReplOffset() + "\r\n";
-//            return respSerializer.serializeBulkString("role:" + redisConfig.getRole());
-//        }
-//        return  "# Server\r\n" ;
-//    }
+    public String info(String[] command) {
+        command[0] = "info";
+        int replication = Arrays.stream(command).toList().indexOf("replication");
+        if(replication > -1) {
+            return respSerializer.serializeBulkString("role:" + redisConfig.getRole());
+        }
+        return  "# Server\r\n" ;
+    }
 
 
     public String replconf(String[] command, Client client) {
         return "+OK\r\n";
     }
+
 }

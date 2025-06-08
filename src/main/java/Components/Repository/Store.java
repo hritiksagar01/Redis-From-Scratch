@@ -1,14 +1,14 @@
-package Components;
+package Components.Repository;
 
+import Components.Service.RespSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-class Store {
+public class Store {
     @Autowired
     public RespSerializer respSerializer;
     public ConcurrentHashMap<String, Value> map;
