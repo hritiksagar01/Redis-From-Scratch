@@ -5,6 +5,25 @@ import org.springframework.stereotype.Component;
 @Component
 public class RedisConfig {
     public String role;
+    public int  port;
+ public   String masterHost;
+  public  int masterPort;
+
+    public String getMasterHost() {
+        return masterHost;
+    }
+
+    public void setMasterHost(String masterHost) {
+        this.masterHost = masterHost;
+    }
+
+    public int getMasterPort() {
+        return masterPort;
+    }
+
+    public void setMasterPort(int masterPort) {
+        this.masterPort = masterPort;
+    }
 
     public String getRole() {
         return role;
@@ -22,7 +41,7 @@ public class RedisConfig {
         this.port = port;
     }
 
-    public int  port;
+
     public RedisConfig() {
         this.role = "master";
         this.port = 6379;
