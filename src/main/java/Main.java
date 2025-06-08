@@ -26,10 +26,6 @@ public class Main {
                         redisConfig.setMasterPort(masterPort);
                         break;
 
-                default:
-                    System.err.println("Unknown option: " + args[i]);
-                    return;
-
             }
 
             }
