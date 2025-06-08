@@ -6,15 +6,21 @@ import java.util.UUID;
 
 @Component
 public class RedisConfig {
-    public String role;
-    public int  port;
- public   String masterHost;
-  public  int masterPort;
-  private String masterReplId = null;
+    private String role;
+    private int port;
+    private String masterHost;
+    private int masterPort;
+    private String masterReplId = null;
+    private long masterReplOffset = 0L;
+
+    public RedisConfig() {
+        this.role = "master";
+        this.port = 6379;
+    }
 
     public String getMasterReplId() {
         if (masterReplId == null) {
-            masterReplId = UUID.randomUUID().toString().replace("-", "")+
+            masterReplId = UUID.randomUUID().toString().replace("-", "") +
                     UUID.randomUUID().toString().replace("-", "").substring(0, 8);
         }
         return masterReplId;
@@ -25,18 +31,12 @@ public class RedisConfig {
     }
 
     public long getMasterReplOffset() {
-        if (masterReplOffset == 0L) {
-            masterReplOffset = 0L;
-        }
         return masterReplOffset;
     }
 
     public void setMasterReplOffset(long masterReplOffset) {
         this.masterReplOffset = masterReplOffset;
     }
-
-    private long masterReplOffset = 0L;
-
 
     public String getMasterHost() {
         return masterHost;
@@ -69,11 +69,4 @@ public class RedisConfig {
     public void setPort(int port) {
         this.port = port;
     }
-
-
-    public RedisConfig() {
-        this.role = "master";
-        this.port = 6379;
-    }
-
 }
