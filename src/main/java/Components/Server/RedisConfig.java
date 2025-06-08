@@ -2,12 +2,41 @@ package Components.Server;
 
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class RedisConfig {
     public String role;
     public int  port;
  public   String masterHost;
   public  int masterPort;
+  private String masterReplId = null;
+
+    public String getMasterReplId() {
+        if (masterReplId == null) {
+            masterReplId = UUID.randomUUID().toString().replace("-", "")+
+                    UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        }
+        return masterReplId;
+    }
+
+    public void setMasterReplId(String masterReplId) {
+        this.masterReplId = masterReplId;
+    }
+
+    public long getMasterReplOffset() {
+        if (masterReplOffset == Long.parseLong(null)) {
+            masterReplOffset = 0L;
+        }
+        return masterReplOffset;
+    }
+
+    public void setMasterReplOffset(long masterReplOffset) {
+        this.masterReplOffset = masterReplOffset;
+    }
+
+    private long masterReplOffset = Long.parseLong(null);
+
 
     public String getMasterHost() {
         return masterHost;
