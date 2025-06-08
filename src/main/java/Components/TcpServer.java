@@ -22,8 +22,8 @@ public class TcpServer {
     @Autowired
     private CommandHandler commandHandler;
 
-    public void startServer() {
-        int port = 6379;
+    public void startServer(int port) {
+
         ServerSocket serverSocket = null;
         Socket clientSocket = null;
         try {
