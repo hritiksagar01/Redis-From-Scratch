@@ -93,7 +93,7 @@ public class SlaveTcpServer {
                     (lenListeningPort+"") + "\r\n" + (listeningPort+"") +
                     "\r\n";
             data = replconf.getBytes();
-            outputStream.write(data);
+            outputStream.write(data);;
             bytesRead = inputStream.read(inputBuffer,0,inputBuffer.length);
             response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
 
