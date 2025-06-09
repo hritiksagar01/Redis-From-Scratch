@@ -97,6 +97,12 @@ public class SlaveTcpServer {
             bytesRead = inputStream.read(inputBuffer,0,inputBuffer.length);
             response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
 
+            replconf = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n";
+            data = replconf.getBytes();
+            outputStream.write(data);
+            bytesRead = inputStream.read(inputBuffer,0,inputBuffer.length);
+            response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
+
 
 
         }
