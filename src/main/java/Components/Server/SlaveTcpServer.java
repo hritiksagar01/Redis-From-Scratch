@@ -34,7 +34,7 @@ public class SlaveTcpServer {
         try {
             serverSocket = new ServerSocket(port);
             serverSocket.setReuseAddress(true);
-            CompletableFuture<Void> slaveConnectionFuture = CompletableFuture.runAsync(this::initateSlavery);
+            CompletableFuture<Void> slaveConnectionFuture = CompletableFuture.runAsync(this::initiateSlavery);
             slaveConnectionFuture.thenRun(() -> {
                 System.out.println("Replication Compleleted");
             });
