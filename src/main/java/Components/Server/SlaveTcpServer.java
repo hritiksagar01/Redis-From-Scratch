@@ -103,6 +103,13 @@ public class SlaveTcpServer {
             bytesRead = inputStream.read(inputBuffer,0,inputBuffer.length);
             response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
 
+            //part 3 of the handshake
+            replconf = "*3\\r\\n$5\\r\\nPSYNC\\r\\n$1\\r\\n?\\r\\n$2\\r\\n-1\\r\\n";
+            data = replconf.getBytes();
+            outputStream.write(data);
+            bytesRead = inputStream.read(inputBuffer,0,inputBuffer.length);
+            response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
+
 
 
         }
