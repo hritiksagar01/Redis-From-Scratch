@@ -5,13 +5,16 @@ import Components.Infra.Slave;
 import Components.Repository.Store;
 import Components.Server.RedisConfig;
 import Components.Infra.Client;
+import Components.Server.ResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.Base64;
 
 @Component
 public class CommandHandler {
+    private static final String emptyRdbFile = "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==";
     @Autowired
     public RespSerializer respSerializer;
     @Autowired
@@ -115,20 +118,35 @@ public class CommandHandler {
         connectionPool.removeClient(client);
         return "+OK\r\n";
     }
+    public byte[] concatenate(byte[] a, byte[] b){
+        byte[] result = new byte[a.length +b.length];
+        System.arraycopy(a, 0, result, 0, a.length);
+        System.arraycopy(b, 0, result, a.length, b.length);
+        return result;
+    }
 
-    public String psync(String[] command) {
-        String replicationIdMaster  = command[1];
-        String relicationOffsetMaster = command[2];
+    public ResponseDto psync(String[] command) {
+        String replicationIdMaster = command[1];
+        String replicationOffSetMaster = command[2];
 
-        if (replicationIdMaster.equals("?") && relicationOffsetMaster.equals("-1")) {
-            // Full synchronization
+        if(replicationIdMaster.equals("?") && replicationOffSetMaster.equals("-1")){
             String replicationId = redisConfig.getMasterReplId();
             long replicationOffset = redisConfig.getMasterReplOffset();
-            String res = "+FULLRESYNC " + replicationId + " " + replicationOffset + "\r\n";;
-        return  res;
+            String res = "+FULLRESYNC "+ replicationId +" "+replicationOffset+"\r\n";
+
+            byte[] rdbFileData = Base64.getDecoder().decode(emptyRdbFile);
+
+            String length = rdbFileData.length+"";
+
+            String fullResyncHeader = "$"+ length +"\r\n";
+            byte[] header = fullResyncHeader.getBytes();
+
+        //    connectionPool.slavesThatAreCaughtUp++;
+
+            return new ResponseDto(res, concatenate(header, rdbFileData));
+        }else{
+            return new ResponseDto("Options not supported yet.");
         }
-        else {
-            return "-NOMASTERLINK No link to master\r\n";
-        }
+
     }
 }

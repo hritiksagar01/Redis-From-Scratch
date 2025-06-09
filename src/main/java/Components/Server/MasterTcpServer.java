@@ -106,6 +106,7 @@ public class MasterTcpServer {
 
     private void handleCommand(String[] command, Client client) throws IOException {
         String res = "";
+        byte[] data = null;
         switch (command[0]) {
             case "PING":
                 res = commandHandler.ping(command);
@@ -129,13 +130,14 @@ public class MasterTcpServer {
                 res = "HI RIYA";
                 break;
             case "PSYNC":
-                res = commandHandler.psync(command);
+             ResponseDto   resDto = commandHandler.psync(command);
+               res = resDto.response;
+                data = resDto.data;
                 break;
         }
-        if (res != null && !res.isEmpty()) {
-            client.outputStream.write(res.getBytes(StandardCharsets.UTF_8));
-            client.outputStream.flush();
-        }
+        client.send(res ,data);
+
+
     }
     }
 
