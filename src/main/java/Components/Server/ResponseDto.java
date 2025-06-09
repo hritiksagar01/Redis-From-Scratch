@@ -1,6 +1,6 @@
 package Components.Server;
 
- class ResponseDto {
+ public class ResponseDto {
     public String response = null;
     public byte[] data = null;
 
