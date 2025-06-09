@@ -1,8 +1,10 @@
 package Components.Service;
 
+import Components.Infra.ConnectionPool;
+import Components.Infra.Slave;
 import Components.Repository.Store;
 import Components.Server.RedisConfig;
-import Infra.Client;
+import Components.Infra.Client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,8 +18,8 @@ public class CommandHandler {
     public Store store;
     @Autowired
     public RedisConfig redisConfig;
-//    @Autowired
-//    public ConnectionPool connectionPool;
+    @Autowired
+    public ConnectionPool connectionPool;
 
 
     public String ping(String[] command) {
@@ -82,6 +84,35 @@ public class CommandHandler {
 
 
     public String replconf(String[] command, Client client) {
+
+        switch (command[1]){
+            case "listening-port":
+               connectionPool.removeClient(client);
+                Slave s = new Slave(client);
+                connectionPool.addSlave(s);
+                return "+OK\r\n";
+            case "capa":
+                Slave slave = null;
+                for(Slave sd : connectionPool.getSlaves()){
+                    if(sd.connection.equals(client)){
+                        slave = sd;
+                        break;
+                    }
+                }
+                for(int i =0 ; i < command.length; i++){
+                    if(command[i].equals("capa")){
+                        slave.capabilities.add(command[i + 1]);
+                    }
+                }
+                return "+OK\r\n";
+
+            case "getack":
+                // Handle getack command if needed
+                break;
+            default:
+                return "-ERR unknown REPLCONF option\r\n";
+        }
+        connectionPool.removeClient(client);
         return "+OK\r\n";
     }
 

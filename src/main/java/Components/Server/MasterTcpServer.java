@@ -1,8 +1,9 @@
 package Components.Server;
 
+import Components.Infra.ConnectionPool;
 import Components.Service.RespSerializer;
 import Components.Service.CommandHandler;
-import Infra.Client;
+import Components.Infra.Client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -24,12 +25,15 @@ public class MasterTcpServer {
     private CommandHandler commandHandler;
     @Autowired
     RedisConfig redisConfig;
+    @Autowired
+    ConnectionPool connectionPool;
 
     public void startServer() {
 
         ServerSocket serverSocket = null;
         Socket clientSocket = null;
         int port = redisConfig.getPort();
+
         try {
             serverSocket = new ServerSocket(port);
             serverSocket.setReuseAddress(true);
@@ -69,7 +73,7 @@ public class MasterTcpServer {
     }
 
     void handleClients(Client client) throws IOException {
-
+        connectionPool.addClient(client);
         while (client.socket.isConnected()) {
             byte[] buffer = new byte[client.socket.getReceiveBufferSize()];
             int bytesRead = client.inputStream.read(buffer);
@@ -83,6 +87,8 @@ public class MasterTcpServer {
 
             }
         }
+        connectionPool.removeClient(client);
+        connectionPool.removeSlave(client);
 //        Scanner sc = new Scanner(client.inputStream);
 //        while (sc.hasNextLine()) {
 //            String nextLine = sc.nextLine();

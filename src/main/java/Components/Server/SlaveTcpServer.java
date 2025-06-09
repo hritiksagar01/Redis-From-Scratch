@@ -1,8 +1,9 @@
 package Components.Server;
 
+import Components.Infra.ConnectionPool;
 import Components.Service.CommandHandler;
 import Components.Service.RespSerializer;
-import Infra.Client;
+import Components.Infra.Client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +25,8 @@ public class SlaveTcpServer {
     private CommandHandler commandHandler;
     @Autowired
     RedisConfig redisConfig;
+    @Autowired
+    ConnectionPool connectionPool;
 
     public void startServer() {
 
@@ -104,13 +107,11 @@ public class SlaveTcpServer {
             response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
 
             //part 3 of the handshake
-            replconf = "*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n";
-            data = replconf.getBytes();
+           String psync  = "*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n";
+            data = psync.getBytes();
             outputStream.write(data);
             bytesRead = inputStream.read(inputBuffer,0,inputBuffer.length);
             response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
-
-
 
         }
         catch (IOException e) {
@@ -119,6 +120,7 @@ public class SlaveTcpServer {
     }
 
     void handleClients(Client client) throws IOException {
+        connectionPool.addClient(client);
 
         while (client.socket.isConnected()) {
             byte[] buffer = new byte[client.socket.getReceiveBufferSize()];
@@ -133,6 +135,8 @@ public class SlaveTcpServer {
 
             }
         }
+        connectionPool.removeClient(client);
+        connectionPool.removeSlave(client);
 //        Scanner sc = new Scanner(client.inputStream);
 //        while (sc.hasNextLine()) {
 //            String nextLine = sc.nextLine();
