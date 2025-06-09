@@ -62,7 +62,7 @@ public class CommandHandler {
 
 
     public String info(String[] command){
-        // command[0]; info
+
         int replication = Arrays.stream(command).toList().indexOf("replication");
         if(replication > -1){
             String role = "role:"+redisConfig.getRole();

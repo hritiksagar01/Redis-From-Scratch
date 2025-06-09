@@ -17,16 +17,19 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-public class TcpServer {
+public class MasterTcpServer {
     @Autowired
     private RespSerializer respSerializer;
     @Autowired
     private CommandHandler commandHandler;
+    @Autowired
+    RedisConfig redisConfig;
 
-    public void startServer(int port) {
+    public void startServer() {
 
         ServerSocket serverSocket = null;
         Socket clientSocket = null;
+
         try {
             serverSocket = new ServerSocket(port);
             serverSocket.setReuseAddress(true);
@@ -116,6 +119,9 @@ public class TcpServer {
                 case "INFO":
                     res = commandHandler.info(command);
                     break;
+            case "RIYA":
+                res = "HI RIYA";
+                break;
         }
         if (res != null && !res.isEmpty()) {
             client.outputStream.write(res.getBytes(StandardCharsets.UTF_8));
