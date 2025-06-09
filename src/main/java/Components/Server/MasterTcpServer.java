@@ -29,7 +29,7 @@ public class MasterTcpServer {
 
         ServerSocket serverSocket = null;
         Socket clientSocket = null;
-
+        int port = redisConfig.getPort();
         try {
             serverSocket = new ServerSocket(port);
             serverSocket.setReuseAddress(true);
