@@ -1,6 +1,7 @@
 package Components.Server;
 
 import Components.Infra.ConnectionPool;
+import Components.Infra.Slave;
 import Components.Service.CommandHandler;
 import Components.Service.RespSerializer;
 import Components.Infra.Client;
@@ -13,6 +14,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -110,13 +112,68 @@ public class SlaveTcpServer {
            String psync  = "*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n";
             data = psync.getBytes();
             outputStream.write(data);
-            bytesRead = inputStream.read(inputBuffer,0,inputBuffer.length);
-            response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
+         List <Integer> res =  handlePsyncResponse(inputStream);
+         while(master.isConnected()){
+             int offset =1 ;
+             StringBuilder sb = new StringBuilder();
+             List<Byte> bytes = new ArrayList<>();
+             while(true){
+                 int b = inputStream.read();
+                 if(b == '*') {
+                     break;
+                 }
+                 offset++;
+                 bytes.add((byte)b);
+                 if (inputStream.available() <= 0) {
+                     break;
+                 }
+             }
+             for(Byte b : bytes){
+                 sb.append((char)(b & 0xFF));
+             }
+             if(bytes.isEmpty())
+                 continue;
+             String command = sb.toString();
+             String parts[] = command.split("\r\n");
 
+             if(command.equals("+OK\r\n"))
+                 continue;
+             String[] commandArray = respSerializer.parseArray(parts);
+             String commandResult = handleCommandFromMaster(commandArray, master);
+
+         }
         }
         catch (IOException e) {
             System.out.println("IOException: " + e.getMessage());
         }
+    }
+
+    private String handleCommandFromMaster(String[] command, Socket master) {
+        String cmd = command[0];
+        cmd = cmd.toUpperCase();
+        String res = "";
+        switch (cmd){
+            case "SET" :
+                commandHandler.set(command);
+                CompletableFuture.runAsync(()->propogate(command));
+                break;
+        }
+        return res;
+    }
+
+
+    private List<Integer> handlePsyncResponse(InputStream inputStream) throws IOException {
+        List<Integer> res = new ArrayList<>();
+        while(true){
+            if(inputStream.available() <= 0)
+                continue;
+            int b = inputStream.read();
+            res.add(b);
+            if(b == (int)'*') {
+                break;
+            }
+        }
+        return res;
     }
 
     void handleClients(Client client) throws IOException {
@@ -151,7 +208,17 @@ public class SlaveTcpServer {
 //            }
         // }
     }
-
+    private void propogate(String[] command) {
+        String commandRespString = respSerializer.respArray(command);
+        try {
+            for(Slave slave : connectionPool.getSlaves()){
+                slave.send(commandRespString.getBytes());
+            }
+        }
+        catch (IOException e){
+            throw new RuntimeException(e);
+        }
+    }
     private void handleCommand(String[] command, Client client) throws IOException {
         String res = "";
         byte[] data = null;
