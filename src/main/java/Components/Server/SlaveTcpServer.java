@@ -73,15 +73,30 @@ public class SlaveTcpServer {
         }
     }
 
-    private void initateSlavery() {
-        try (Socket master = new Socket(redisConfig.getMasterHost(), redisConfig.getPort())){
+    private void initiateSlavery() {
+        try(Socket master = new Socket(redisConfig.getMasterHost(), redisConfig.getMasterPort())){
             InputStream inputStream = master.getInputStream();
             OutputStream outputStream = master.getOutputStream();
             byte[] inputBuffer = new byte[1024];
+
+            //part 1 of the handshake
             byte[] data = "*1\r\n$4\r\nPING\r\n".getBytes();
             outputStream.write(data);
             int bytesRead = inputStream.read(inputBuffer,0,inputBuffer.length);
             String response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
+
+
+            //part 2 of the handshake
+            int lenListeningPort = (redisConfig.getPort()+"").length();
+            int listeningPort = redisConfig.getPort();
+            String replconf = "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$" +
+                    (lenListeningPort+"") + "\r\n" + (listeningPort+"") +
+                    "\r\n";
+            data = replconf.getBytes();
+            outputStream.write(data);
+            bytesRead = inputStream.read(inputBuffer,0,inputBuffer.length);
+            response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
+
 
 
         }
