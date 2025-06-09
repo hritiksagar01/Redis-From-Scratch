@@ -173,6 +173,9 @@ public class SlaveTcpServer {
                 case "INFO":
                     res = commandHandler.info(command);
                     break;
+            case "PSYNC":
+                res = commandHandler.psync(command);
+                break;
 
         }
         if (res != null && !res.isEmpty()) {

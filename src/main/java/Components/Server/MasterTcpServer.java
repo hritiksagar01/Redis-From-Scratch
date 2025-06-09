@@ -128,6 +128,9 @@ public class MasterTcpServer {
             case "RIYA":
                 res = "HI RIYA";
                 break;
+            case "PSYNC":
+                res = commandHandler.psync(command);
+                break;
         }
         if (res != null && !res.isEmpty()) {
             client.outputStream.write(res.getBytes(StandardCharsets.UTF_8));

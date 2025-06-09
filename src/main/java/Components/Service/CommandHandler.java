@@ -116,4 +116,19 @@ public class CommandHandler {
         return "+OK\r\n";
     }
 
+    public String psync(String[] command) {
+        String replicationIdMaster  = command[1];
+        String relicationOffsetMaster = command[2];
+
+        if (replicationIdMaster.equals("?") && relicationOffsetMaster.equals("-1")) {
+            // Full synchronization
+            String replicationId = redisConfig.getMasterReplId();
+            long replicationOffset = redisConfig.getMasterReplOffset();
+            String res = "+FULLRESYNC " + replicationId + " " + replicationOffset + "\r\n";;
+        return  res;
+        }
+        else {
+            return "-NOMASTERLINK No link to master\r\n";
+        }
+    }
 }
