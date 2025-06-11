@@ -112,6 +112,11 @@ public class MasterTcpServer {
             case "PING":
                 res = commandHandler.ping(command);
                 break;
+            case "WAIT":
+                if(connectionPool.bytesSentToSlaves == 0){
+                    res = respSerializer.respInteger(connectionPool.slavesThatAreCaughtUp);
+                    break;
+                }
             case "ECHO":
                 res = commandHandler.echo(command);
                 break;
