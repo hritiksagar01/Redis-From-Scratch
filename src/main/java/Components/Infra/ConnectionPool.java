@@ -7,8 +7,19 @@ import java.util.Set;
 
 @Component
 public class ConnectionPool {
+    public int bytesSentToSlaves=0;
+    public int slavesThatAreCaughtUp =0;
     private Set<Client> clients;
     private Set<Slave> slaves;
+
+    public void slaveAck(int ackResponse){
+        if(this.bytesSentToSlaves == ackResponse){
+            slavesThatAreCaughtUp++;
+        }
+        else{
+            slavesThatAreCaughtUp = 0;
+        }
+    }
     public ConnectionPool() {
        clients = new HashSet<>();
         slaves = new HashSet<>();

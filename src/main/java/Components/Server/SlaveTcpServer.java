@@ -270,11 +270,11 @@ public class SlaveTcpServer {
                 res = resDto.response;
                 data = resDto.data;
                 break;
-//            case "WAIT":
-//                if(connectionPool.bytesSentToSlaves == 0){
-//                    res = respSerializer.respInteger(connectionPool.slavesThatAreCaughtUp);
-//                    break;
-//                }
+            case "WAIT":
+                if(connectionPool.bytesSentToSlaves == 0){
+                    res = respSerializer.respInteger(connectionPool.slavesThatAreCaughtUp);
+                    break;
+                }
 //
 //                Instant start = Instant.now();
 //                res = commandHandler.wait(command, start);
