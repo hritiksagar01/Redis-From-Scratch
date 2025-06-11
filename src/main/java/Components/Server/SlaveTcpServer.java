@@ -5,7 +5,6 @@ import Components.Infra.Slave;
 import Components.Service.CommandHandler;
 import Components.Service.RespSerializer;
 import Components.Infra.Client;
-import Components.Service.ResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -114,10 +113,6 @@ public class SlaveTcpServer {
             outputStream.write(data);
 
             List<Integer> res = handlePsyncResponse(inputStream);
-
-            // number of bytes in the input stream coming down from the master after this point, if they are read and the command is proccessed we can add
-            // the number of bytes processes to the offset
-
             while(master.isConnected()){
                 int offset = 1;
                 StringBuilder sb = new StringBuilder();
