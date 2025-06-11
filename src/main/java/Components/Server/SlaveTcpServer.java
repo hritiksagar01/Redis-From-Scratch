@@ -6,6 +6,7 @@ import Components.Service.CommandHandler;
 import Components.Service.RespSerializer;
 import Components.Infra.Client;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.expression.spel.CodeFlow;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -138,9 +139,15 @@ public class SlaveTcpServer {
 
              if(command.equals("+OK\r\n"))
                  continue;
-             String[] commandArray = respSerializer.parseArray(parts);
-             String commandResult = handleCommandFromMaster(commandArray, master);
 
+             String[] commandArray = respSerializer.parseArray(parts);
+             Client masterClient = new Client(master , master.getInputStream(),master.getOutputStream() ,-1);
+
+             String commandResult = handleCommandFromMaster(commandArray, master);
+             if(commandArray[0].equals("REPLCONF") && commandArray[1].equals("ACK")){
+                 outputStream.write(commandResult.getBytes());
+                 offset++;
+             }
          }
         }
         catch (IOException e) {
@@ -148,7 +155,7 @@ public class SlaveTcpServer {
         }
     }
 
-    private String handleCommandFromMaster(String[] command, Socket master) {
+    private String handleCommandFromMaster(String[] command, Client master) {
         String cmd = command[0];
         cmd = cmd.toUpperCase();
         String res = "";
@@ -156,6 +163,9 @@ public class SlaveTcpServer {
             case "SET" :
                 commandHandler.set(command);
                 CompletableFuture.runAsync(()->propogate(command));
+                break;
+            case "REPLCONF" :
+                commandHandler.replconf(command , master);
                 break;
         }
         return res;
