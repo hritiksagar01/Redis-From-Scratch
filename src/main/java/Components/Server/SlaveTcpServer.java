@@ -5,34 +5,36 @@ import Components.Infra.Slave;
 import Components.Service.CommandHandler;
 import Components.Service.RespSerializer;
 import Components.Infra.Client;
+import Components.Service.ResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.expression.spel.CodeFlow;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Component
 public class SlaveTcpServer {
+    private static final Logger logger = Logger.getLogger(SlaveTcpServer.class.getName());
     @Autowired
     private RespSerializer respSerializer;
     @Autowired
     private CommandHandler commandHandler;
     @Autowired
-    RedisConfig redisConfig;
+    private RedisConfig redisConfig;
     @Autowired
-    ConnectionPool connectionPool;
-
-    public void startServer() {
-
+    private ConnectionPool connectionPool;
+    public void startServer(){
         ServerSocket serverSocket = null;
         Socket clientSocket = null;
         int port = redisConfig.getPort();
@@ -40,41 +42,36 @@ public class SlaveTcpServer {
         try {
             serverSocket = new ServerSocket(port);
             serverSocket.setReuseAddress(true);
-            CompletableFuture<Void> slaveConnectionFuture = CompletableFuture.runAsync(this::initiateSlavery);
-            slaveConnectionFuture.thenRun(() -> {
-                System.out.println("Replication Compleleted");
-            });
-            int id = 0;
 
+            CompletableFuture<Void> slaveConnectionFuture = CompletableFuture.runAsync(this::initiateSlavery);
+            slaveConnectionFuture.thenRun(()->System.out.println("Replication completed"));
+
+            int id = 0;
             while (true) {
                 clientSocket = serverSocket.accept();
                 id++;
                 Socket finalClientSocket = clientSocket;
                 InputStream inputStream = clientSocket.getInputStream();
                 OutputStream outputStream = clientSocket.getOutputStream();
-                Client client = new Client(finalClientSocket, inputStream, outputStream, id);
+                Client client = new Client(finalClientSocket, inputStream, outputStream, id );
                 CompletableFuture.runAsync(() -> {
                     try {
-                        handleClients(client);
+                        handleClient(client);
                     } catch (IOException e) {
-                        System.out.println("IOException: " + e.getMessage());
+                        throw new RuntimeException(e);
                     }
                 });
             }
 
-
         } catch (IOException e) {
-            System.out.println("IOException: " + e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage());
         } finally {
             try {
                 if (clientSocket != null) {
                     clientSocket.close();
                 }
-                if (serverSocket != null) {
-                    serverSocket.close();
-                }
             } catch (IOException e) {
-                System.out.println("IOException: " + e.getMessage());
+                logger.log(Level.SEVERE, e.getMessage());
             }
         }
     }
@@ -90,7 +87,7 @@ public class SlaveTcpServer {
             outputStream.write(data);
             int bytesRead = inputStream.read(inputBuffer,0,inputBuffer.length);
             String response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
-
+            logger.log(Level.FINE, response);
 
             //part 2 of the handshake
             int lenListeningPort = (redisConfig.getPort()+"").length();
@@ -99,78 +96,127 @@ public class SlaveTcpServer {
                     (lenListeningPort+"") + "\r\n" + (listeningPort+"") +
                     "\r\n";
             data = replconf.getBytes();
-            outputStream.write(data);;
+            outputStream.write(data);
             bytesRead = inputStream.read(inputBuffer,0,inputBuffer.length);
             response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
+            logger.log(Level.FINE, response);
 
             replconf = "*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n";
             data = replconf.getBytes();
             outputStream.write(data);
             bytesRead = inputStream.read(inputBuffer,0,inputBuffer.length);
             response = new String(inputBuffer,0,bytesRead, StandardCharsets.UTF_8);
+            logger.log(Level.FINE, response);
 
-            //part 3 of the handshake
-           String psync  = "*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n";
+            // part 3 of the handshake
+            String psync = "*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n";
             data = psync.getBytes();
             outputStream.write(data);
-         List <Integer> res =  handlePsyncResponse(inputStream);
-         while(master.isConnected()){
-             int offset =1 ;
-             StringBuilder sb = new StringBuilder();
-             List<Byte> bytes = new ArrayList<>();
-             while(true){
-                 int b = inputStream.read();
-                 if(b == '*') {
-                     break;
-                 }
-                 offset++;
-                 bytes.add((byte)b);
-                 if (inputStream.available() <= 0) {
-                     break;
-                 }
-             }
-             for(Byte b : bytes){
-                 sb.append((char)(b & 0xFF));
-             }
-             if(bytes.isEmpty())
-                 continue;
-             String command = sb.toString();
-             String parts[] = command.split("\r\n");
 
-             if(command.equals("+OK\r\n"))
-                 continue;
+            List<Integer> res = handlePsyncResponse(inputStream);
 
-             String[] commandArray = respSerializer.parseArray(parts);
-             Client masterClient = new Client(master , master.getInputStream(),master.getOutputStream() ,-1);
+            // number of bytes in the input stream coming down from the master after this point, if they are read and the command is proccessed we can add
+            // the number of bytes processes to the offset
 
-             String commandResult = handleCommandFromMaster(commandArray, masterClient);
-             if(commandArray[0].equals("REPLCONF") && commandArray[1].equals("ACK")){
-                 outputStream.write(commandResult.getBytes());
-                 offset++;
-             }
-         }
-        }
-        catch (IOException e) {
-            System.out.println("IOException: " + e.getMessage());
+            while(master.isConnected()){
+                int offset = 1;
+                StringBuilder sb = new StringBuilder();
+                List<Byte> bytes = new ArrayList<>();
+
+                while(true){
+                    int b = inputStream.read();
+                    if(b=='*'){
+                        break;
+                    }
+                    offset++;
+                    bytes.add((byte)b);
+                    if(inputStream.available()<=0){
+                        break;
+                    }
+                }
+
+                for(Byte b: bytes){
+                    sb.append((char)(b.byteValue() & 0xFF));
+                }
+
+                if(bytes.isEmpty())
+                    continue;
+                String command = sb.toString();
+                String parts[] = command.split("\r\n");
+
+                if(command.equals("+OK\r\n"))
+                    continue;
+
+
+                String[] commandArray = respSerializer.parseArray(parts);
+                Client masterClient = new Client(master, master.getInputStream(), master.getOutputStream(), -1);
+                String commandResult = handleCommandFromMaster(commandArray, masterClient);
+
+                if(commandArray.length >= 2 && commandArray[0].equals("REPLCONF") && commandArray[1].equals("GETACK")){
+                    if(!commandResult.equals("") && commandResult!=null)
+                        outputStream.write(commandResult.getBytes());
+                    offset++;
+                    List<Byte> leftOverBytes = new ArrayList<>();
+                    while(true){
+                        if(inputStream.available()<=0)
+                            break;
+                        byte b = (byte)inputStream.read();
+                        leftOverBytes.add(b);
+                        if((int) b == (int)'*')
+                            break;
+                        offset++;
+                    }
+                    StringBuilder leftOverSb = new StringBuilder();
+                    for(Byte b: leftOverBytes){
+                        leftOverSb.append((char)(b.byteValue() & 0xFF));
+                    }
+                }
+                redisConfig.setMasterReplOffset(offset + redisConfig.getMasterReplOffset());
+            }
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, e.getMessage());
         }
     }
 
     private String handleCommandFromMaster(String[] command, Client master) {
+        for(String c: command){
+            System.out.print(c+" ");
+        }
         String cmd = command[0];
         cmd = cmd.toUpperCase();
+
         String res = "";
         switch (cmd){
-            case "SET" :
+            case "SET":
                 commandHandler.set(command);
-              CompletableFuture.runAsync(()->propogate(command));
+                String commandRespString = respSerializer.respArray(command);
+                byte[] toCount = commandRespString.getBytes();
+         //       connectionPool.bytesSentToSlaves += toCount.length;
+                CompletableFuture.runAsync(()->propagate(command));
                 break;
-            case "REPLCONF" :
-              res =   commandHandler.replconf(command , master);
+            case "REPLCONF":
+                res = commandHandler.replconf(command, master);
                 break;
         }
         return res;
     }
 
+    private void propagate(String[] command) {
+        String commandRespString = respSerializer.respArray(command);
+        try{
+            for(Slave slave: connectionPool.getSlaves()){
+                System.out.println("========================= sending command down to slave ==============================");
+                System.out.println("command: "+commandRespString);
+                System.out.println(slave.connection.id);
+                InetAddress remoteAddress = slave.connection.socket.getInetAddress();
+                System.out.println("Remote IP address: " + remoteAddress.getHostAddress() +": "+slave.connection.socket.getPort());
+                slave.send(commandRespString.getBytes());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private List<Integer> handlePsyncResponse(InputStream inputStream) throws IOException {
         List<Integer> res = new ArrayList<>();
@@ -186,53 +232,29 @@ public class SlaveTcpServer {
         return res;
     }
 
-    void handleClients(Client client) throws IOException {
+    private void handleClient(Client client) throws IOException {
         connectionPool.addClient(client);
-
-        while (client.socket.isConnected()) {
+        while(client.socket.isConnected()){
             byte[] buffer = new byte[client.socket.getReceiveBufferSize()];
             int bytesRead = client.inputStream.read(buffer);
-            if (bytesRead > 0) {
-                byte[] validBuffer = Arrays.copyOfRange(buffer, 0, bytesRead);
-                List<String[]> commands = respSerializer.deseralize(validBuffer);
 
-                for (String[] command : commands) {
+            if(bytesRead > 0){
+                // bytes parsing into strings
+                List<String[]> commands = respSerializer.deseralize(buffer);
+
+                for(String[] command :commands){
                     handleCommand(command, client);
                 }
-
             }
         }
         connectionPool.removeClient(client);
         connectionPool.removeSlave(client);
-//        Scanner sc = new Scanner(client.inputStream);
-//        while (sc.hasNextLine()) {
-//            String nextLine = sc.nextLine();
-//            if (nextLine.contains("PING")) {
-//                client.outputStream.write("+PONG \r\n".getBytes());
-//            }
-//            if (sc.nextLine().contains("ECHO")) {
-//                String respHeader = sc.nextLine();
-//                String respBody = sc.nextLine();
-//                String response = respHeader + "\r\n" + respBody + "\r\n";
-//                client.outputStream.write(response.getBytes());
-//            }
-        // }
     }
-    private void propogate(String[] command) {
-        String commandRespString = respSerializer.respArray(command);
-        try {
-            for(Slave slave : connectionPool.getSlaves()){
-                slave.send(commandRespString.getBytes());
-            }
-        }
-        catch (IOException e){
-            throw new RuntimeException(e);
-        }
-    }
+
     private void handleCommand(String[] command, Client client) throws IOException {
         String res = "";
         byte[] data = null;
-        switch (command[0]) {
+        switch (command[0]){
             case "PING":
                 res = commandHandler.ping(command);
                 break;
@@ -240,25 +262,30 @@ public class SlaveTcpServer {
                 res = commandHandler.echo(command);
                 break;
             case "SET":
-                res = "READONLY You cant write to a slave replica. \r\n";
-                break;
-            case "REPLCONF":
-                res = commandHandler.replconf(command, client);
+                res = "-READONLY You can't write against a replica.\r\n";
                 break;
             case "GET":
                 res = commandHandler.get(command);
                 break;
-                case "INFO":
-                    res = commandHandler.info(command);
-                    break;
+            case "INFO":
+                res = commandHandler.info(command);
+                break;
             case "PSYNC":
-                ResponseDto   resDto = commandHandler.psync(command);
+                ResponseDto resDto = commandHandler.psync(command);
                 res = resDto.response;
                 data = resDto.data;
                 break;
-
+//            case "WAIT":
+//                if(connectionPool.bytesSentToSlaves == 0){
+//                    res = respSerializer.respInteger(connectionPool.slavesThatAreCaughtUp);
+//                    break;
+//                }
+//
+//                Instant start = Instant.now();
+//                res = commandHandler.wait(command, start);
+//                connectionPool.slavesThatAreCaughtUp = 0;
+//                break;
         }
-        client.send(res ,data);
+        client.send(res, data);
     }
-    }
-
+}
