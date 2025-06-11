@@ -143,7 +143,7 @@ public class SlaveTcpServer {
              String[] commandArray = respSerializer.parseArray(parts);
              Client masterClient = new Client(master , master.getInputStream(),master.getOutputStream() ,-1);
 
-             String commandResult = handleCommandFromMaster(commandArray, master);
+             String commandResult = handleCommandFromMaster(commandArray, masterClient);
              if(commandArray[0].equals("REPLCONF") && commandArray[1].equals("ACK")){
                  outputStream.write(commandResult.getBytes());
                  offset++;
@@ -162,10 +162,10 @@ public class SlaveTcpServer {
         switch (cmd){
             case "SET" :
                 commandHandler.set(command);
-                CompletableFuture.runAsync(()->propogate(command));
+              CompletableFuture.runAsync(()->propogate(command));
                 break;
             case "REPLCONF" :
-                commandHandler.replconf(command , master);
+              res =   commandHandler.replconf(command , master);
                 break;
         }
         return res;
