@@ -201,7 +201,6 @@ public class SlaveTcpServer {
         String commandRespString = respSerializer.respArray(command);
         try{
             for(Slave slave: connectionPool.getSlaves()){
-                System.out.println("========================= sending command down to slave ==============================");
                 System.out.println("command: "+commandRespString);
                 System.out.println(slave.connection.id);
                 InetAddress remoteAddress = slave.connection.socket.getInetAddress();
@@ -234,7 +233,6 @@ public class SlaveTcpServer {
             int bytesRead = client.inputStream.read(buffer);
 
             if(bytesRead > 0){
-                // bytes parsing into strings
                 List<String[]> commands = respSerializer.deseralize(buffer);
 
                 for(String[] command :commands){
@@ -282,6 +280,6 @@ public class SlaveTcpServer {
 
 
         }
-        client.send(res, data);
+        client.send(new ResponseDto(res, data));
     }
 }

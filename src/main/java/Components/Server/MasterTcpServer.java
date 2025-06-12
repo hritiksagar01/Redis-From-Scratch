@@ -2,8 +2,10 @@ package Components.Server;
 
 import Components.Infra.ConnectionPool;
 import Components.Infra.Slave;
-import Components.Service.RespSerializer;
+import Components.Repository.Store;
+import Components.Repository.Value;
 import Components.Service.CommandHandler;
+import Components.Service.RespSerializer;
 import Components.Infra.Client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -11,162 +13,221 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Component
 public class MasterTcpServer {
+    private static final Logger logger = Logger.getLogger(MasterTcpServer.class.getName());
     @Autowired
     private RespSerializer respSerializer;
     @Autowired
     private CommandHandler commandHandler;
     @Autowired
-    RedisConfig redisConfig;
+    private RedisConfig redisConfig;
     @Autowired
-    ConnectionPool connectionPool;
-
-    public void startServer() {
-
+    private ConnectionPool connectionPool;
+    @Autowired
+    private Store store;
+    public void startServer(){
         ServerSocket serverSocket = null;
         Socket clientSocket = null;
         int port = redisConfig.getPort();
-
         try {
             serverSocket = new ServerSocket(port);
             serverSocket.setReuseAddress(true);
             int id = 0;
-
             while (true) {
                 clientSocket = serverSocket.accept();
                 id++;
                 Socket finalClientSocket = clientSocket;
+
                 InputStream inputStream = clientSocket.getInputStream();
                 OutputStream outputStream = clientSocket.getOutputStream();
-                Client client = new Client(finalClientSocket, inputStream, outputStream, id);
+
+                Client client = new Client(finalClientSocket, inputStream, outputStream, id );
                 CompletableFuture.runAsync(() -> {
                     try {
-                        handleClients(client);
+                        handleClient(client);
                     } catch (IOException e) {
-                        System.out.println("IOException: " + e.getMessage());
+                        throw new RuntimeException(e);
                     }
                 });
             }
 
-
         } catch (IOException e) {
-            System.out.println("IOException: " + e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage());
         } finally {
             try {
                 if (clientSocket != null) {
                     clientSocket.close();
                 }
-                if (serverSocket != null) {
-                    serverSocket.close();
-                }
             } catch (IOException e) {
-                System.out.println("IOException: " + e.getMessage());
+                logger.log(Level.SEVERE, e.getMessage());
             }
         }
     }
-
-    void handleClients(Client client) throws IOException {
+    private void handleClient(Client client) throws IOException {
         connectionPool.addClient(client);
-        while (client.socket.isConnected()) {
+        while(client.socket.isConnected()){
             byte[] buffer = new byte[client.socket.getReceiveBufferSize()];
             int bytesRead = client.inputStream.read(buffer);
-            if (bytesRead > 0) {
-                byte[] validBuffer = Arrays.copyOfRange(buffer, 0, bytesRead);
-                List<String[]> commands = respSerializer.deseralize(validBuffer);
 
-                for (String[] command : commands) {
+            if(bytesRead > 0){
+                // bytes parsing into strings
+                List<String[]> commands = respSerializer.deseralize(buffer);
+
+                for(String[] command :commands){
                     handleCommand(command, client);
                 }
-
             }
         }
         connectionPool.removeClient(client);
         connectionPool.removeSlave(client);
-//        Scanner sc = new Scanner(client.inputStream);
-//        while (sc.hasNextLine()) {
-//            String nextLine = sc.nextLine();
-//            if (nextLine.contains("PING")) {
-//                client.outputStream.write("+PONG \r\n".getBytes());
-//            }
-//            if (sc.nextLine().contains("ECHO")) {
-//                String respHeader = sc.nextLine();
-//                String respBody = sc.nextLine();
-//                String response = respHeader + "\r\n" + respBody + "\r\n";
-//                client.outputStream.write(response.getBytes());
-//            }
-        // }
     }
 
     private void handleCommand(String[] command, Client client) throws IOException {
+        if(!client.isGetTransactionalContext()){
+            ResponseDto responseDto = caseHandler(command, client);
+            client.send(responseDto);
+        }else if(!isTransactionalControlCommand(command[0])){
+            addCommandToTransaction(command, client);
+        }else{
+            transactionController(command, client);
+        }
+
+    }
+
+    private void transactionController(String[] command, Client client) throws IOException {
+        //control only comes here in the transaction context
+        switch (command[0]){
+            case "EXEC":
+                if(client.commandQueue==null || client.commandQueue.isEmpty()){
+                    client.send("*0\r\n");
+                    client.endTransaction();
+                    return;
+                }
+
+                Queue<String[]> commands = new LinkedList<>(client.commandQueue);
+
+                BiFunction<String[], Map<String, Value>, String> transactionCacheApplier = commandHandler.getTransactionCommandCacheApplier();
+                store.executeTransaction(client, transactionCacheApplier);
+
+                client.endTransaction();
+                while(!commands.isEmpty()){
+                    String[] commandToPropagate = commands.poll();
+                    String commandRespString = respSerializer.respArray(commandToPropagate);
+                    byte[] toCount = commandRespString.getBytes();
+                    connectionPool.bytesSentToSlaves += toCount.length;
+                    CompletableFuture.runAsync(()->propagate(commandToPropagate));
+                }
+
+                String response = respSerializer.respArray(client.transactionResponse);
+
+                client.send(response);
+
+                break;
+            case "DISCARD":
+                client.endTransaction();
+                client.send("+OK\r\n");
+                break;
+        }
+    }
+
+    private void addCommandToTransaction(String[] command, Client client) throws IOException {
+        client.commandQueue.offer(command);
+        client.send("+QUEUED\r\n");
+    }
+
+    private boolean isTransactionalControlCommand(String command) {
+        return switch (command) {
+            case "EXEC", "DISCARD" -> true;
+            default -> false;
+        };
+    }
+
+    public ResponseDto caseHandler(String[] command, Client client){
+        //control comes here only when the client is not in a transaction
         String res = "";
         byte[] data = null;
-        switch (command[0]) {
+        switch (command[0]){
             case "PING":
                 res = commandHandler.ping(command);
                 break;
-            case "WAIT":
-                if(connectionPool.bytesSentToSlaves == 0){
-                        res = respSerializer.respInteger(connectionPool.slavesThatAreCaughtUp);
-                    break;
-                }
-                Instant now = Instant.now();
-                res = commandHandler.wait(command, now);
-                connectionPool.slavesThatAreCaughtUp = 0;
+            case "EXEC":
+                res = "-ERR EXEC without MULTI\r\n";
+                break;
+            case "DISCARD":
+                res = "-ERR DISCARD without MULTI\r\n";
+                break;
+            case "MULTI":
+                client.beginTransaction();
+                res = "+OK\r\n";
+                break;
+            case "INCR":
+                res = commandHandler.incr(command);
                 break;
             case "ECHO":
                 res = commandHandler.echo(command);
                 break;
             case "SET":
                 res = commandHandler.set(command);
-                String resArr = respSerializer.respArray(command);
-                byte[] bytes = resArr.getBytes();
-                connectionPool.bytesSentToSlaves += bytes.length;
-                CompletableFuture.runAsync(()->propogate(command));
-                break;
-            case "REPLCONF":
-                res = commandHandler.replconf(command, client);
+                String commandRespString = respSerializer.respArray(command);
+                byte[] toCount = commandRespString.getBytes();
+                connectionPool.bytesSentToSlaves += toCount.length;
+                CompletableFuture.runAsync(()->propagate(command));
                 break;
             case "GET":
                 res = commandHandler.get(command);
                 break;
-                case "INFO":
-                    res = commandHandler.info(command);
+            case "INFO":
+                res = commandHandler.info(command);
+                break;
+            case "REPLCONF":
+                res = commandHandler.replconf(command, client);
+                break;
+            case "WAIT":
+                if(connectionPool.bytesSentToSlaves == 0){
+                    res = respSerializer.respInteger(connectionPool.slavesThatAreCaughtUp);
                     break;
-            case "RIYA":
-                res = "HI RIYA";
+                }
+                Instant start = Instant.now();
+                res = commandHandler.wait(command, start);
+                connectionPool.slavesThatAreCaughtUp = 0;
                 break;
             case "PSYNC":
-             ResponseDto   resDto = commandHandler.psync(command);
-               res = resDto.response;
+                ResponseDto resDto = commandHandler.psync(command);
+                res = resDto.response;
                 data = resDto.data;
                 break;
-            case  "INCR":
-                    res  = commandHandler.incr(command);
         }
-        client.send(res ,data);
-
-
+        return new ResponseDto(res, data);
     }
 
-    private void propogate(String[] command) {
+
+    private void propagate(String[] command) {
         String commandRespString = respSerializer.respArray(command);
-      try {
-          for(Slave slave : connectionPool.getSlaves()){
-              slave.send(commandRespString.getBytes());
-          }
-      }
-      catch (IOException e){
-          throw new RuntimeException(e);
-      }
+        try{
+            for(Slave slave: connectionPool.getSlaves()){
+                System.out.println("command: "+commandRespString);
+                System.out.println(slave.connection.id);
+                InetAddress remoteAddress = slave.connection.socket.getInetAddress();
+                System.out.println("Remote IP address: " + remoteAddress.getHostAddress() +": "+slave.connection.socket.getPort());
+
+                slave.send(commandRespString.getBytes());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
-
