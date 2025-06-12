@@ -149,6 +149,8 @@ public class MasterTcpServer {
                res = resDto.response;
                 data = resDto.data;
                 break;
+            case  "INCR":
+                    res  = commandHandler.incr(command);
         }
         client.send(res ,data);
 
