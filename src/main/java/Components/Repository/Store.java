@@ -70,7 +70,7 @@ public class Store {
             LocalDateTime now = LocalDateTime.now();
 
             Value value = map.get(key);
-            if (value.expiry.isBefore(now)) {
+            if (value == null || value.expiry.isBefore(now)) {
                 map.remove(key);
                 return "$-1\r\n";
             }
@@ -92,7 +92,7 @@ public class Store {
             LocalDateTime now = LocalDateTime.now();
 
             Value value = map.getOrDefault(key , null);
-            if (value.expiry.isBefore(now)) {
+            if (value == null || value.expiry.isBefore(now)) {
                 map.remove(key);
                 return null;
             }

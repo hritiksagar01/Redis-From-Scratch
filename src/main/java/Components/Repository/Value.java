@@ -18,4 +18,7 @@ public class Value {
         this.created = created;
         this.isDeletedInTransaction = false;
     }
+    public boolean isExpired() {
+        return expiry != null && expiry.isBefore(LocalDateTime.now());
+    }
 }
