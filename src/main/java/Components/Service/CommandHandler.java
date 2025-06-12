@@ -213,6 +213,6 @@ public class CommandHandler {
         catch (Exception e){
             res = "-ERR value is not an integer or out of range\r\n";
         }
-
+        return  res;
     }
 }
