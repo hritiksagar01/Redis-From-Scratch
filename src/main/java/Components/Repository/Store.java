@@ -58,7 +58,7 @@ public class Store {
             System.out.println(e.getMessage());
             return "-1\r\n";}
          finally {
-            rwLock.readLock().unlock();
+            rwLock.writeLock().unlock();
         }
 
 
@@ -119,7 +119,6 @@ public class Store {
                 String response = transactionCacheApplier.apply(command, localCache);
                 responses.add(response);
             }
-            //control will only come here when the queue is empty, that means no other commands in the transaction left to be applied
 
             for(Map.Entry<String, Value> entry : localCache.entrySet()){
                 String key = entry.getKey();
