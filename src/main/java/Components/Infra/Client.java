@@ -19,11 +19,10 @@ public class Client {
     public OutputStream outputStream;
     private boolean transactionalContext;
     public Queue<String[]> commandQueue;
-    private boolean getTransactionalContext;
     public List<String> transactionResponse;
 
     public boolean isGetTransactionalContext() {
-        return getTransactionalContext;
+        return transactionalContext;
     }
     public boolean beginTransaction() {
         if(transactionalContext)
@@ -62,7 +61,7 @@ public class Client {
             }
         }
     public void send(String data) throws IOException {
-        if (data != null && data.isEmpty()) {
+        if (data != null && !data.isEmpty()) {
             outputStream.write(data.getBytes());
         }
     }

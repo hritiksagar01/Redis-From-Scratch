@@ -157,7 +157,6 @@ public class MasterTcpServer {
     }
 
     public ResponseDto caseHandler(String[] command, Client client){
-        //control comes here only when the client is not in a transaction
         String res = "";
         byte[] data = null;
         switch (command[0]){
