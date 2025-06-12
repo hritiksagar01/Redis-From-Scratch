@@ -29,4 +29,11 @@ public class Client {
             }
         }
     }
+
+    public void send(byte[] data) throws IOException {
+            if (data != null && data.length > 0) {
+                outputStream.write(data);
+            }
+        }
+    }
 }

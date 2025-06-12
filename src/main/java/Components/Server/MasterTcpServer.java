@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -114,14 +115,21 @@ public class MasterTcpServer {
                 break;
             case "WAIT":
                 if(connectionPool.bytesSentToSlaves == 0){
-                    res = respSerializer.respInteger(connectionPool.slavesThatAreCaughtUp);
+                        res = respSerializer.respInteger(connectionPool.slavesThatAreCaughtUp);
                     break;
                 }
+                Instant now = Instant.now();
+                res = commandHandler.wait(command, now);
+                connectionPool.slavesThatAreCaughtUp = 0;
+                break;
             case "ECHO":
                 res = commandHandler.echo(command);
                 break;
             case "SET":
                 res = commandHandler.set(command);
+                String resArr = respSerializer.respArray(command);
+                byte[] bytes = resArr.getBytes();
+                connectionPool.bytesSentToSlaves += bytes.length;
                 CompletableFuture.runAsync(()->propogate(command));
                 break;
             case "REPLCONF":
