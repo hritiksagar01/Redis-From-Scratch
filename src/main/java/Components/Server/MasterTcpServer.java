@@ -218,6 +218,8 @@ public class MasterTcpServer {
         String commandRespString = respSerializer.respArray(command);
         try{
             for(Slave slave: connectionPool.getSlaves()){
+                System.out.println("Propagating command to slave: " + slave.connection.id);
+                System.out.println("WTF its working wooooooooooooooooooooooooooooo");
                 System.out.println("command: "+commandRespString);
                 System.out.println(slave.connection.id);
                 InetAddress remoteAddress = slave.connection.socket.getInetAddress();

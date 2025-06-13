@@ -175,6 +175,8 @@ public class SlaveTcpServer {
     }
 
     private String handleCommandFromMaster(String[] command, Client master) {
+        System.out.println("wtf its geetting the command from master");
+        System.out.println("its working wooooooooooooooooooooooooooooooooooooooooooo ");
         for(String c: command){
             System.out.print(c+" ");
         }
